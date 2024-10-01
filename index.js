@@ -8,7 +8,9 @@ var cors = require('cors')
 const bodyParser = require('body-parser');
 app.use(bodyParser.json({limit: "50mb"})); // for JSON bodies
 app.use(bodyParser.urlencoded({limit: "50mb", extended: true })); // for form encoded bodies
-app.use(cors())
+app.use(cors({
+    origin: "http://localhost:3000"
+}))
 
 
 // definig port
