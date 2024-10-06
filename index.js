@@ -9,7 +9,7 @@ const bodyParser = require('body-parser');
 app.use(bodyParser.json({limit: "50mb"})); // for JSON bodies
 app.use(bodyParser.urlencoded({limit: "50mb", extended: true })); // for form encoded bodies
 app.use(cors({
-    origin: "http://localhost:3000"
+    origin: ["http://localhost:3000", "https://calm-nougat-19c80e.netlify.app"]
 }))
 
 
