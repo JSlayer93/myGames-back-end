@@ -20,7 +20,7 @@ exports.multerError = (error, req, res, next) => {
 // returns full array of games
 exports.getAllGames = async(req, res) => {
     try {
-        const data = await game.find(req.body)
+        const data = await game.find(req.query.info)
         const images = await s3GetAllFiles()
         data.map((game, index) => {
             let filterImages = images.filter(image => image.name == game.name)
