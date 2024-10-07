@@ -47,13 +47,13 @@ exports.s3GetAllFiles = async(...name) => {
 }
 
 // uploading images on s3 with aws-sdk version 2
-exports.s3UploadMainPic = async (file, id, name) => {
+exports.s3UploadMainPic = async (file, id) => {
     const s3 = new S3({
         region: process.env.AWS_REGION
     })
     const param = {
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `gameImages/${name}/mainPic/${id}`,
+        Key: `gameImages/${id}/mainPic/${file.originalname}`,
         Body: file.buffer,
         ContentType: file.mimetype
     }
@@ -67,7 +67,7 @@ exports.s3UploadMainPic = async (file, id, name) => {
 }
 
 // upload multiple images on s3 with aws-sdk version 2
-exports.s3UploadPictures = async(files, name) => {
+exports.s3UploadPictures = async(files, id) => {
     const s3 = new S3({
         region: process.env.AWS_REGION
     })
@@ -75,7 +75,7 @@ exports.s3UploadPictures = async(files, name) => {
     const params = files.map(file => {
         return {
             Bucket: process.env.AWS_BUCKET_NAME,
-            Key: `gameImages/${name}/pictures/${file.originalname}`,
+            Key: `gameImages/${id}/pictures/${file.originalname}`,
             Body: file.buffer,
             ContentType: file.mimetype
         }
@@ -97,7 +97,7 @@ exports.s3DeleteV2 = async (id, name) => {
     })
     const param = {
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `gameImages/${name}/mainPic/${id}`
+        Key: `gameImages/${id}/mainPic/${name}`
     }
     try {
         return await s3.deleteObject(param).promise().then(res => console.log(res))
@@ -107,7 +107,7 @@ exports.s3DeleteV2 = async (id, name) => {
 }
 
 // delete multiple images on s3 with aws-sdk versoin 2
-exports.s3DeleteManyV2 = async (files, name) => {
+exports.s3DeleteManyV2 = async (id, files) => {
     const s3 = new S3({
         region: process.env.AWS_REGION
     })
@@ -115,7 +115,7 @@ exports.s3DeleteManyV2 = async (files, name) => {
     const params = files.map(file => {
         return {
             Bucket: process.env.AWS_BUCKET_NAME,
-            Key: `gameImages/${name}/pictures/${file.originalname}`,
+            Key: `gameImages/${id}/pictures/${file.originalname}`,
         }
     })
     try {

@@ -21,10 +21,13 @@ exports.multerError = (error, req, res, next) => {
 exports.getAllGames = async(req, res) => {
     try {
         const data = await game.find(req.query.info)
+        console.log(data)
         const images = await s3GetAllFiles()
         data.map((game, index) => {
-            let filterImages = images.filter(image => image.name == game.name)
-            data[index].mainPic = filterImages[0].url
+            let filterImages = images.filter(image => image.name == game._id)
+            if (filterImages[0]){
+                data[index].mainPic = filterImages[0].url
+            }
             data[index].pictures = filterImages.slice(1).map(obj => obj.url);
         })
         res.status(200).json({
@@ -45,7 +48,7 @@ exports.getAllGames = async(req, res) => {
 exports.getGame = async(req, res) => {
     try {
         const data = await game.findById(req.params.id)
-        const images = await s3GetAllFiles(data.name)
+        const images = await s3GetAllFiles(data._id)
         data.mainPic = images[0].url
         data.pictures = images.slice(1).map(obj => obj.url);
         res.status(200).json({
@@ -88,9 +91,10 @@ exports.createGame = async(req, res, next) => {
             picture => _.pick(picture, ['fieldname', 'originalname', 'size'])
         );
         req.body.pictures = filteredPictures;
-        const data = await game.create(req.body)
-        gameImage = await s3UploadMainPic(req.files.mainPic, data._id, req.body.name)
-        gamePictures = await s3UploadPictures(req.files.pictures, req.body.name)
+        const data = await game.create(req.body).then( async (game) => {
+            gameImage = await s3UploadMainPic(req.files.mainPic, game._id)
+            gamePictures = await s3UploadPictures(req.files.pictures, game._id)
+        })
 
         res.status(201).json({
             status: "succed",
@@ -155,8 +159,8 @@ exports.deleteManyGame = async(req, res) => {
 exports.deleteOneGame = async(req, res) => {
     try {
         const data = await game.findByIdAndDelete(req.params.id)
-        gameImage = await s3DeleteV2(data._id, data.name)
-        gamePictures = await s3DeleteManyV2(data.pictures, data.name)
+        gameImage = await s3DeleteV2(data._id, data.mainPic)
+        gamePictures = await s3DeleteManyV2(data._id, data.pictures)
 
         res.status(200).json({
             status: "succeed",
