@@ -97,7 +97,7 @@ exports.s3DeleteV2 = async (id, name) => {
     })
     const param = {
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `gameImages/${id}/mainPic/${name}`
+        Key: `gameImages/${id}/mainPic/undefined`
     }
     try {
         return await s3.deleteObject(param).promise().then(res => console.log(res))

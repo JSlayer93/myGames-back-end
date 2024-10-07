@@ -158,9 +158,10 @@ exports.deleteManyGame = async(req, res) => {
 // delete one game with id
 exports.deleteOneGame = async(req, res) => {
     try {
-        const data = await game.findByIdAndDelete(req.params.id)
-        gameImage = await s3DeleteV2(data._id, data.mainPic)
-        gamePictures = await s3DeleteManyV2(data._id, data.pictures)
+        const data = await game.findByIdAndDelete(req.params.id).then( async (game) => {
+            gameImage = await s3DeleteV2(game._id, game.mainPic)
+            gamePictures = await s3DeleteManyV2(game._id, game.pictures)
+        })
 
         res.status(200).json({
             status: "succeed",
