@@ -5,7 +5,7 @@ var _ = require('lodash');
 // importing multer and initialising it
 const multer = require("multer")
 // importing s3Upload to uplaod images
-const { s3UploadV2, s3DeleteV2, s3UploadMainPic, s3UploadPictures, s3DeleteManyV2, s3GetAllFiles } = require("../s3Services")
+const { s3UploadV2, s3DeleteV2, s3UploadMainPic, s3UploadPictures, s3DeleteManyV2, s3GetAllFiles, s3UploadVideos, s3DeleteManyVidsV2, s3DeleteManyPicsV2 } = require("../s3Services")
 
 // error handling for multer
 exports.multerError = (error, req, res, next) => {
@@ -21,14 +21,23 @@ exports.multerError = (error, req, res, next) => {
 exports.getAllGames = async(req, res) => {
     try {
         const data = await game.find(req.query.info).collation({ locale: 'en', strength: 2 }).exec();
-        console.log(data)
-        const images = await s3GetAllFiles()
+        const files = await s3GetAllFiles()
         data.map((game, index) => {
-            let filterImages = images.filter(image => image.name == game._id)
-            if (filterImages[0]){
-                data[index].mainPic = filterImages[0].url
+            let pictures = []
+            let videos = []
+            let filterFiles = files.filter(image => image.name == game._id)
+            if (filterFiles[0]){
+                data[index].mainPic = filterFiles[0].url
             }
-            data[index].pictures = filterImages.slice(1).map(obj => obj.url);
+            filterFiles.map((file, i) => {
+                if(file.folder == 'pictures'){
+                    pictures.push(file.url)
+                }else if(file.folder == 'videos'){
+                    videos.push(file.url)
+                }
+            })
+            data[index].pictures = pictures
+            data[index].videos = videos
         })
         res.status(200).json({
             status: "succeed",
@@ -48,9 +57,19 @@ exports.getAllGames = async(req, res) => {
 exports.getGame = async(req, res) => {
     try {
         const data = await game.findById(req.params.id)
-        const images = await s3GetAllFiles(data._id)
-        data.mainPic = images[0].url
-        data.pictures = images.slice(1).map(obj => obj.url);
+        const files = await s3GetAllFiles(data._id)
+        data.mainPic = files[0].url
+        var pictures = []
+        var videos = []
+        files.map((file, index) => {
+            if(file.folder == 'videos'){
+                videos.push(file.url)
+            }else if(file.folder == 'pictures'){
+                pictures.push(file.url)
+            }
+        })
+        data.pictures = pictures
+        data.videos = videos
         res.status(200).json({
             status: "succeed",
             data: {
@@ -87,13 +106,30 @@ exports.createGame = async(req, res, next) => {
 
     try {
         req.body.mainPic = req.files.mainPic[0].originalname
-        const filteredPictures = req.files.pictures.map(
-            picture => _.pick(picture, ['fieldname', 'originalname', 'size'])
-        );
+
+        var filteredPictures
+        var filteredVideos
+        
+        if(req.files.pictures){
+            filteredPictures = req.files.pictures.map(
+                picture => _.pick(picture, ['fieldname', 'originalname', 'size'])
+            );
+        }
+
+        if(req.files.videos){
+            filteredVideos = req.files.videos.map(
+                video => _.pick(video, ['fieldname', 'originalname', 'size'])
+            );
+        }else{
+            filteredVideos = undefined
+        }
         req.body.pictures = filteredPictures;
+        req.body.videos = filteredVideos;
+
         const data = await game.create(req.body).then( async (game) => {
             gameImage = await s3UploadMainPic(req.files.mainPic, game._id)
-            gamePictures = await s3UploadPictures(req.files.pictures, game._id)
+            req.files.pictures ? gamePictures = await s3UploadPictures(req.files.pictures, game._id) : gamePictures = []
+            req.files.videos ? gameVideos = await s3UploadVideos(req.files.videos, game._id) : gameVideos = []
         })
 
         res.status(201).json({
@@ -160,7 +196,12 @@ exports.deleteOneGame = async(req, res) => {
     try {
         const data = await game.findByIdAndDelete(req.params.id).then( async (game) => {
             gameImage = await s3DeleteV2(game._id, game.mainPic)
-            gamePictures = await s3DeleteManyV2(game._id, game.pictures)
+            if(game.pictures != []){
+                gamePictures = await s3DeleteManyPicsV2(game._id, game.pictures)
+            }
+            if(game.videos != []){
+                gameVideos = await s3DeleteManyVidsV2(game._id, game.videos)
+            }
         })
 
         res.status(200).json({
@@ -168,7 +209,8 @@ exports.deleteOneGame = async(req, res) => {
             data: {
                 data,
                 gameImage,
-                gamePictures
+                gamePictures,
+                gameVideos
             }
         })
     } catch (error) {

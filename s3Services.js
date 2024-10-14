@@ -90,6 +90,31 @@ exports.s3UploadPictures = async(files, id) => {
     }
 }
 
+// upload multiple videos on s3 with aws-sdk version 2
+exports.s3UploadVideos = async(files, id) => {
+    const s3 = new S3({
+        region: process.env.AWS_REGION
+    })
+
+    const params = files.map(file => {
+        return {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: `gameImages/${id}/videos/${file.originalname}`,
+            Body: file.buffer,
+            ContentType: file.mimetype
+        }
+    })
+    try {
+        return await Promise.all(
+            params.map(param => s3.putObject(param).promise())
+        )
+    } catch (error) {
+        console.log(error)
+        return error
+    }
+}
+
+
 // delete images on s3 with aws-sdk version 2
 exports.s3DeleteV2 = async (id, name) => {
     const s3 = new S3({
@@ -107,7 +132,7 @@ exports.s3DeleteV2 = async (id, name) => {
 }
 
 // delete multiple images on s3 with aws-sdk versoin 2
-exports.s3DeleteManyV2 = async (id, files) => {
+exports.s3DeleteManyPicsV2 = async (id, files) => {
     const s3 = new S3({
         region: process.env.AWS_REGION
     })
@@ -116,6 +141,28 @@ exports.s3DeleteManyV2 = async (id, files) => {
         return {
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: `gameImages/${id}/pictures/${file.originalname}`,
+        }
+    })
+    try {
+        return await Promise.all(
+            params.map(param => s3.deleteObject(param).promise())
+        )
+    } catch (error) {
+        console.log(error)
+        return error
+    }
+}
+
+// delete videos images on s3 with aws-sdk versoin 2
+exports.s3DeleteManyVidsV2 = async (id, files) => {
+    const s3 = new S3({
+        region: process.env.AWS_REGION
+    })
+
+    const params = files.map(file => {
+        return {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: `gameImages/${id}/videos/${file.originalname}`,
         }
     })
     try {

@@ -28,6 +28,10 @@ const gameSchema = new mongoose.Schema({
         type: Object,
         required: false
     },
+    videos: {
+        type: Object,
+        required: false
+    },
     favCharacter: {
         type: String,
         required: false

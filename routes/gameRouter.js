@@ -8,7 +8,7 @@ const multer = require("multer")
 const storage = multer.memoryStorage()
 // filtering uploaded files
 const fileFilter = (req, file, cb) => {
-    if(file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "image/webp"){
+    if(file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "image/webp" || file.mimetype === "video/mp4"){
         cb(null, true)
     }else{cb(null, false)}
 }
@@ -21,7 +21,8 @@ const upload = multer({
 const multiUpload = upload.fields(
     [
         {name: "mainPic", maxCount: 1},
-        {name: "pictures", maxCount: 5}
+        {name: "pictures", maxCount: 5},
+        {name: "videos", maxCount: 5}
     ]
 )
 
